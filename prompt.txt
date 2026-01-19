@@ -1,0 +1,196 @@
+
+Here is the reality, without sugar-coating.
+
+You are not dealing with a “wrong prompt.”
+You are dealing with **model mismatch and capability variance**.
+
+Different LLMs do **not** interpret prompts the same way. If LLM B succeeds and LLM A fails, then **LLM A lacks either the reasoning depth, instruction-following precision, or format adherence** required by your current prompt. Since you cannot retrain LLM A, you must **engineer around its weaknesses**.
+
+Below is the correct, professional way to handle this.
+
+---
+
+## 1. Identify *exactly* where LLM A fails
+
+Do not generalize. Pin it down.
+
+Failures usually fall into one of these categories:
+
+* Misunderstanding constraints
+* Ignoring edge cases
+* Hallucinating structure or format
+* Failing multi-step reasoning
+* Producing inconsistent output
+
+**Action:**
+Run both models on the same prompt and diff the outputs line-by-line.
+You must know *what* breaks before fixing it.
+
+---
+
+## 2. Decompose the prompt (LLM A cannot handle complex instructions)
+
+If your prompt is “clever,” “compressed,” or relies on implicit reasoning, LLM A will fail.
+
+**Fix:**
+
+* Replace compound instructions with **atomic steps**
+* Remove implicit logic
+* State everything explicitly
+
+### Bad (works on strong models only)
+
+> Analyze the input and generate a compliant structured response.
+
+### Good (works on weaker models)
+
+> Step 1: Read the input carefully.
+> Step 2: Identify X, Y, and Z explicitly.
+> Step 3: Output ONLY the JSON in the exact schema below.
+> Step 4: Do not add any explanation.
+
+---
+
+## 3. Add **hard constraints and guardrails**
+
+LLM A likely ignores soft language.
+
+**Use imperative language only**:
+
+* “MUST”
+* “DO NOT”
+* “ONLY output…”
+* “If condition fails, return exactly: ERROR”
+
+Example:
+
+```
+You MUST follow the rules below.
+If any rule is violated, the output is invalid.
+
+Rules:
+1. Output must be valid JSON.
+2. No extra keys.
+3. No text outside JSON.
+4. Use lowercase only.
+```
+
+Weak models respond far better to **authoritative constraints**.
+
+---
+
+## 4. Use **few-shot examples** (this is critical)
+
+LLM A probably cannot generalize from instructions alone.
+
+Provide **input → output pairs**, including edge cases.
+
+Structure:
+
+```
+Example 1:
+Input: ...
+Output: ...
+
+Example 2:
+Input: ...
+Output: ...
+
+Now process this input:
+Input: ...
+Output:
+```
+
+If LLM B works without examples but LLM A doesn’t, this is non-negotiable.
+
+---
+
+## 5. Force the output structure explicitly
+
+Never assume formatting intelligence.
+
+### Instead of:
+
+> Return the result in JSON.
+
+### Do this:
+
+```
+Output format (copy exactly):
+
+{
+  "field1": "<string>",
+  "field2": <number>,
+  "field3": "<one of: A | B | C>"
+}
+```
+
+Also specify:
+
+* No trailing commas
+* No comments
+* No explanations
+
+---
+
+## 6. Use **self-verification inside the prompt**
+
+You cannot retrain, but you can force a check.
+
+Example:
+
+```
+Before final output:
+- Verify all rules are satisfied.
+- If any rule fails, regenerate internally.
+- Output only the final valid result.
+```
+
+This reduces error rates significantly for weaker models.
+
+---
+
+## 7. Introduce a **two-step prompting pipeline**
+
+If LLM A fails on one-shot prompts, split the task.
+
+### Step 1 (reasoning, hidden or separate call):
+
+“Extract facts / intermediate representation”
+
+### Step 2 (strict formatting):
+
+“Convert this data into the exact output format”
+
+This mimics chain-of-thought **without requiring model intelligence**.
+
+---
+
+## 8. Accept the hard truth
+
+If after all this LLM A still fails:
+
+* It is **not suitable** for that task
+* You must **lower task complexity**, or
+* Use **post-processing + validation**, or
+* Add a **fallback model** for correction
+
+There is no magic prompt that upgrades a weaker model to a stronger one.
+
+---
+
+## Practical recommendation (what you should do next)
+
+1. Design prompts **for the weakest model**, not the best.
+2. Add examples + strict rules.
+3. Split reasoning and formatting.
+4. Validate output programmatically.
+5. Treat LLM A as a deterministic function, not an intelligent agent.
+
+If you want, you can paste:
+
+* Your current prompt
+* Expected output
+* Actual output from LLM A
+
+I will **rewrite the prompt specifically for LLM A**, not generically.
